@@ -31,11 +31,11 @@ var (
 	)
 	maxPreserve = flags.Int(
 		"event.max-length", 300,
-		"Upper bound of an event to preserve",
+		"Upper bound duration(sec) of an event to preserve",
 	)
 	initPreserve = flags.Int(
 		"event.init-length", 20,
-		"Lower bound of an event to preserve",
+		"Lower bound duration(sec) of an event to preserve",
 	)
 	inCluster = flags.Bool(
 		"running-in-cluster", true,
