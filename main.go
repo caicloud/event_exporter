@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/common/log"
 	"github.com/prometheus/common/version"
 	"github.com/spf13/pflag"
+	k8s_clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	k8s_client "k8s.io/kubernetes/pkg/client/unversioned"
 	kubectl_util "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 )
@@ -64,6 +65,7 @@ func main() {
 	flags.AddGoFlagSet(flag.CommandLine)
 	flags.Parse(os.Args)
 	var client *k8s_client.Client
+	var clientset *k8s_clientset.Clientset
 	clientConfig := kubectl_util.DefaultClientConfig(flags)
 
 	// Workaround of noisy log, see https://github.com/kubernetes/kubernetes/issues/17162
@@ -82,18 +84,19 @@ func main() {
 			log.Fatalln("error connecting to the client:", err)
 		}
 		client, err = k8s_client.New(config)
+		clientset, err = k8s_clientset.NewForConfig(config)
 	}
 	if err != nil {
 		log.Fatalln("failed to create client:", err)
 	}
-	store, err := NewEventStore(client,
+	controller, err := NewController(client, clientset,
 		time.Duration(*initPreserve)*time.Second,
 		time.Duration(*maxPreserve)*time.Second)
 	if err != nil {
 		log.Fatalln("error create event store:", err)
 	}
-	go store.Run()
-	exporter := NewExporter(store)
+	go controller.Run()
+	exporter := NewExporter(controller)
 	prometheus.MustRegister(exporter)
 	log.Infoln("Starting event_exporter", version.Info())
 	log.Infoln("Build context", version.BuildContext())

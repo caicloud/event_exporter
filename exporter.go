@@ -14,16 +14,16 @@ const (
 
 // Exporter collects events and convert to metrics. It implements prometheus.Collector.
 type Exporter struct {
-	store           *EventStore
+	controller      *Controller
 	duration, error prometheus.Gauge
 	totalScrapes    prometheus.Counter
 	up              prometheus.Gauge
 }
 
 // NewExporter return a new event exporter
-func NewExporter(store *EventStore) *Exporter {
+func NewExporter(ctl *Controller) *Exporter {
 	return &Exporter{
-		store: store,
+		controller: ctl,
 		duration: prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "last_scrape_duration_seconds",
 			Help: "Duration of the last scrape of metrics from event store.",
@@ -75,7 +75,7 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 			e.error.Set(1)
 		}
 	}(time.Now())
-	if err = e.store.Scrap(ch); err != nil {
+	if err = e.controller.Scrap(ch); err != nil {
 		log.Errorln("Error scraping for events:", err)
 	}
 }
