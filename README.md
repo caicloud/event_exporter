@@ -45,7 +45,7 @@ You can deploy this exporter using the `cargo.caicloud.io/sysinfra/event-exporte
 For example:
 
 ```
-docker pull prom/mysqld-exporter
+docker pull cargo.caicloud.io/sysinfra/event-exporter
 
 docker run -d -p 9102:9102 -v ~/.kube/config:/root/.kube/config cargo.caicloud.io/sysinfra/event-exporter --running-in-cluster=false
 ```
