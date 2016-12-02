@@ -2,22 +2,25 @@
 
 Kuberentes events to Prometheus bridge.
 
-A Collector that can list and watch Kubernetes events, according events' occurrence to determine how long the event lasts, then translate to metrics.
+A Collector that can list and watch Kubernetes events, and according to events' occurrence, determine how long the event lasts. The information is then translated into metrics.
 
-# Building and Running
+# Build and Run
 
 ## Build
+
 ```
 make
 ```
-## Running
-running outside Kuberentes(It will search for kubeconfig in ~/.kube)
+
+## Run
+
+running outside Kuberentes (Exporter will search for kubeconfig in ~/.kube)
 
 ```
 ./event_exporter --running-in-cluster=false
 ```
 
-running in Kubernetes(It will use Kubernetes serviceaccount)
+running inside Kubernetes (Exporter will use Kubernetes serviceaccount)
 
 ```
 ./event_exporter
@@ -34,11 +37,11 @@ event.max-length | int | Upper bound duration(sec) of an event to preserve (defa
 
 Name | Description
 --- | ---
-running-in-cluster | Optional, if this controller is running in a kubernetes cluster, use the pod secrets for creating a Kubernetes client. (default true)
+running-in-cluster | Optional. If this controller is running in a kubernetes cluster, use the pod secrets for creating a Kubernetes client. (default true)
 log.level | Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal]. (default info)
 version | Print version information
 
-#Using Docker
+## Use Docker
 
 You can deploy this exporter using the `cargo.caicloud.io/sysinfra/event-exporter` Docker image.
 
