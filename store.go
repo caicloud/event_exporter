@@ -47,7 +47,7 @@ func NewEventStore(client *k8s_client.Client, init, max time.Duration) (*EventSt
 		events: prometheus.NewDesc(
 			"kubernetes_events",
 			"State of kubernetes events",
-			[]string{"event_namespace", "event_name", "event_kind", "event_reason", "event_type", "event_subobject", "event_source"},
+			[]string{"event_namespace", "event_name", "event_kind", "event_reason", "event_type", "event_message", "event_source"},
 			nil,
 		),
 	}
@@ -159,7 +159,7 @@ func (es *EventStore) Scrap(ch chan<- prometheus.Metric) error {
 			event.InvolvedObject.Kind,
 			event.Reason,
 			event.Type,
-			event.InvolvedObject.FieldPath,
+			event.Message,
 			fmt.Sprintf("%s/%s", event.Source.Host, event.Source.Component),
 		)
 	}
