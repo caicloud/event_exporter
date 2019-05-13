@@ -71,10 +71,10 @@ podTemplate(
         stage('Docker Build and push') {
             container('docker') {
                 sh("cp /mnt/docker-hub/.dockercfg ~/.dockercfg")
-                sh("docker build -t ${dockerImage}:${imageName} -f Dockerfile .")
-                sh("docker push ${dockerImage}:${imageName}")
+                sh("docker build -t ${dockerImage}:${shortSHA} -f Dockerfile .")
+                sh("docker push ${dockerImage}:${shortSHA}")
                 if (gitBranch == 'master') {
-                        sh("docker tag ${dockerImage}:${imageName} ${dockerImage}:latest")
+                        sh("docker tag ${dockerImage}:${shortSHA} ${dockerImage}:latest")
                         sh("docker push ${dockerImage}:latest")
                     }
 
