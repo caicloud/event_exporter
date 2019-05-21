@@ -31,7 +31,7 @@ podTemplate(
             resourceRequestMemory: '1000Mi',
             resourceLimitMemory: '2000Mi',
         ),
-        ontainerTemplate(
+        containerTemplate(
             name: 'docker',
             image: 'docker:stable',
             ttyEnabled: true,
@@ -47,6 +47,7 @@ podTemplate(
     def shortSHA = '',
     def dockerImage = 'cargo.caicloud.io/sysinfra/event-exporter'
     def gitBranch = ''
+    def dockerTag = dockerImage + ':' + shortSHA
     node('event-exporter') {
         stage('Checkout') {
             varSCM = checkout scm
@@ -71,10 +72,10 @@ podTemplate(
         stage('Docker Build and push') {
             container('docker') {
                 sh("cp /mnt/docker-hub/.dockercfg ~/.dockercfg")
-                sh("docker build -t ${dockerImage}:${shortSHA} -f Dockerfile .")
-                sh("docker push ${dockerImage}:${shortSHA}")
+                sh("docker build -t ${dockerTag} -f Dockerfile .")
+                sh("docker push ${dockerTag}")
                 if (gitBranch == 'master') {
-                        sh("docker tag ${dockerImage}:${shortSHA} ${dockerImage}:latest")
+                        sh("docker tag ${dockerTag} ${dockerImage}:latest")
                         sh("docker push ${dockerImage}:latest")
                     }
 
