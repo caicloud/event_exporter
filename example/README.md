@@ -9,7 +9,8 @@ This will help you to deploy event-exporter to a kubernetes cluster and gather m
 Run following commands to deploy event-exporter to a cluster
 
 1. Download deploy.yaml file locally
-2. `kubectl --context {add your cluster context} -n {add namespace here} apply -f deploy.yaml`
+2. Update namespace in ClusterRoleBinding object (line 33)
+3. `kubectl --context {add your cluster context} -n {add namespace here} apply -f deploy.yaml`
 
 
 # How to see event metrics in Prometheus
