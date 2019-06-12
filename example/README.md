@@ -6,9 +6,11 @@ This will help you to deploy event-exporter to a kubernetes cluster and gather m
 1. A kubernetes cluster is up and running
 2. You have privilage to deploy to that cluster
 
-Run following command to deploy event-exporter to a cluster
+Run following commands to deploy event-exporter to a cluster
 
-`curl https://github.com/caicloud/event_exporter/tree/master/examples/deploy.yaml | kubectl --context {add your cluster context} -n {add namespace here} apply -f -`
+1. Download deploy.yaml file locally
+2. `kubectl --context {add your cluster context} -n {add namespace here} apply -f deploy.yaml`
+
 
 # How to see event metrics in Prometheus
 
