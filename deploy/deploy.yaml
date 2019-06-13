@@ -1,5 +1,5 @@
 ---
-# Source: event-exporter/templates/serviceaccount.yaml
+# Source: event_exporter/templates/serviceaccount.yaml
 {
    "apiVersion": "v1",
    "kind": "ServiceAccount",
@@ -11,7 +11,7 @@
    }
 }
 ---
-# Source: event-exporter/templates/ClusterRoleBinding.yaml
+# Source: event_exporter/templates/ClusterRoleBinding.yaml
 {
    "apiVersion": "rbac.authorization.k8s.io/v1beta1",
    "kind": "ClusterRoleBinding",
@@ -35,13 +35,12 @@
    ]
 }
 ---
-# Source: event-exporter/templates/service.yaml
+# Source: event_exporter/templates/service.yaml
 {
    "apiVersion": "v1",
    "kind": "Service",
    "metadata": {
       "annotations": {
-         "external-dns.alpha.kubernetes.io/hostname": "",
          "prometheus.io/scrape": "true",
          "service.beta.kubernetes.io/aws-load-balancer-backend-protocol": "http",
          "service.beta.kubernetes.io/aws-load-balancer-ssl-ports": "https"
@@ -65,7 +64,7 @@
    }
 }
 ---
-# Source: event-exporter/templates/deployment.yaml
+# Source: event_exporter/templates/deployment.yaml
 {
    "apiVersion": "apps/v1",
    "kind": "Deployment",
