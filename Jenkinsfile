@@ -30,12 +30,29 @@ podTemplate(
             resourceLimitCpu: '2000m',
             resourceRequestMemory: '1000Mi',
             resourceLimitMemory: '2000Mi',
+        ),
+        containerTemplate(
+            name: 'docker',
+            image: 'docker:stable',
+            ttyEnabled: true,
+            command: 'cat',
         )
+    ],
+    volumes: [
+        // Please update it with docker secret in k8s cluster
+        secretVolume(secretName: 'dockerConfig', mountPath: '/mnt/docker-hub'),
+        hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run/docker.sock')
     ]
 ) {
+    def shortSHA = '',
+    def dockerImage = 'cargo.caicloud.io/sysinfra/event-exporter'
+    def gitBranch = ''
+    def dockerTag = dockerImage + ':' + shortSHA
     node('event-exporter') {
         stage('Checkout') {
-            checkout scm
+            varSCM = checkout scm
+            shortSHA = varSCM.GIT_COMMIT.substring(0, 7)
+            gitBranch = varSCM.GIT_BRANCH
         }
         stage('Test') {
             container('golang') {
@@ -50,6 +67,18 @@ podTemplate(
                 // we need a docker client in golang env
                 // sh('cd /go/src/github.com/caicloud/event_exporter && make docker')
                 // sh('cd /go/src/github.com/caicloud/event_exporter && make push')
+            }
+        }
+        stage('Docker Build and push') {
+            container('docker') {
+                sh("cp /mnt/docker-hub/.dockercfg ~/.dockercfg")
+                sh("docker build -t ${dockerTag} -f Dockerfile .")
+                sh("docker push ${dockerTag}")
+                if (gitBranch == 'master') {
+                        sh("docker tag ${dockerTag} ${dockerImage}:latest")
+                        sh("docker push ${dockerImage}:latest")
+                    }
+
             }
         }
         stage('Deploy') {
