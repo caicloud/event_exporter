@@ -1,4 +1,4 @@
-// Copyright 2014 The oauth2 Authors. All rights reserved.
+// Copyright 2014 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -9,6 +9,7 @@
 package jwt
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -18,7 +19,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/internal"
 	"golang.org/x/oauth2/jws"
@@ -46,6 +46,10 @@ type Config struct {
 	//
 	PrivateKey []byte
 
+	// PrivateKeyID contains an optional hint indicating which key is being
+	// used.
+	PrivateKeyID string
+
 	// Subject is the optional user to impersonate.
 	Subject string
 
@@ -54,6 +58,22 @@ type Config struct {
 
 	// TokenURL is the endpoint required to complete the 2-legged JWT flow.
 	TokenURL string
+
+	// Expires optionally specifies how long the token is valid for.
+	Expires time.Duration
+
+	// Audience optionally specifies the intended audience of the
+	// request.  If empty, the value of TokenURL is used as the
+	// intended audience.
+	Audience string
+
+	// PrivateClaims optionally specifies custom private claims in the JWT.
+	// See http://tools.ietf.org/html/draft-jones-json-web-token-10#section-4.3
+	PrivateClaims map[string]interface{}
+
+	// UseIDToken optionally specifies whether ID token should be used instead
+	// of access token when the server returns both.
+	UseIDToken bool
 }
 
 // TokenSource returns a JWT TokenSource using the configuration
@@ -85,9 +105,10 @@ func (js jwtSource) Token() (*oauth2.Token, error) {
 	}
 	hc := oauth2.NewClient(js.ctx, nil)
 	claimSet := &jws.ClaimSet{
-		Iss:   js.conf.Email,
-		Scope: strings.Join(js.conf.Scopes, " "),
-		Aud:   js.conf.TokenURL,
+		Iss:           js.conf.Email,
+		Scope:         strings.Join(js.conf.Scopes, " "),
+		Aud:           js.conf.TokenURL,
+		PrivateClaims: js.conf.PrivateClaims,
 	}
 	if subject := js.conf.Subject; subject != "" {
 		claimSet.Sub = subject
@@ -95,7 +116,15 @@ func (js jwtSource) Token() (*oauth2.Token, error) {
 		// to be compatible with legacy OAuth 2.0 providers.
 		claimSet.Prn = subject
 	}
-	payload, err := jws.Encode(defaultHeader, claimSet, pk)
+	if t := js.conf.Expires; t > 0 {
+		claimSet.Exp = time.Now().Add(t).Unix()
+	}
+	if aud := js.conf.Audience; aud != "" {
+		claimSet.Aud = aud
+	}
+	h := *defaultHeader
+	h.KeyID = js.conf.PrivateKeyID
+	payload, err := jws.Encode(&h, claimSet, pk)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +141,10 @@ func (js jwtSource) Token() (*oauth2.Token, error) {
 		return nil, fmt.Errorf("oauth2: cannot fetch token: %v", err)
 	}
 	if c := resp.StatusCode; c < 200 || c > 299 {
-		return nil, fmt.Errorf("oauth2: cannot fetch token: %v\nResponse: %s", resp.Status, body)
+		return nil, &oauth2.RetrieveError{
+			Response: resp,
+			Body:     body,
+		}
 	}
 	// tokenRes is the JSON response body.
 	var tokenRes struct {
@@ -142,6 +174,12 @@ func (js jwtSource) Token() (*oauth2.Token, error) {
 			return nil, fmt.Errorf("oauth2: error decoding JWT token: %v", err)
 		}
 		token.Expiry = time.Unix(claimSet.Exp, 0)
+	}
+	if js.conf.UseIDToken {
+		if tokenRes.IDToken == "" {
+			return nil, fmt.Errorf("oauth2: response doesn't have JWT token")
+		}
+		token.AccessToken = tokenRes.IDToken
 	}
 	return token, nil
 }
