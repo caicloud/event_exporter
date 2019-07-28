@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"k8s.io/kubernetes/pkg/util/integer"
+	"k8s.io/utils/integer"
 )
 
 type backoffEntry struct {

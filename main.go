@@ -8,11 +8,13 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
 	"github.com/prometheus/common/version"
 	"github.com/spf13/pflag"
-	k8s_client "k8s.io/kubernetes/pkg/client/unversioned"
-	kubectl_util "k8s.io/kubernetes/pkg/kubectl/cmd/util"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 var (
@@ -42,6 +44,7 @@ var (
 		`Optional, if this controller is running in a kubernetes cluster, use the
 		pod secrets for creating a Kubernetes client.`,
 	)
+	kubeconfig = flags.String("kubeconfig", "", "absolute path to the kubeconfig file")
 )
 
 var landingPage = []byte(`<html>
@@ -63,8 +66,6 @@ func serveHTTP() {
 func main() {
 	flags.AddGoFlagSet(flag.CommandLine)
 	flags.Parse(os.Args)
-	var client *k8s_client.Client
-	clientConfig := kubectl_util.DefaultClientConfig(flags)
 
 	// Workaround of noisy log, see https://github.com/kubernetes/kubernetes/issues/17162
 	flag.CommandLine.Parse([]string{})
@@ -73,16 +74,22 @@ func main() {
 		fmt.Fprintln(os.Stdout, version.Print("event_exporter"))
 		os.Exit(0)
 	}
+	var client kubernetes.Interface
+	var config *rest.Config
 	var err error
 	if *inCluster {
-		client, err = k8s_client.NewInCluster()
-	} else {
-		config, connErr := clientConfig.ClientConfig()
-		if connErr != nil {
-			log.Fatalln("error connecting to the client:", err)
+		config, err = rest.InClusterConfig()
+		if err != nil {
+			log.Fatalf("error get incluster config: %v", err)
 		}
-		client, err = k8s_client.New(config)
+	} else {
+		config, err = clientcmd.BuildConfigFromFlags("", *kubeconfig)
+		if err != nil {
+			log.Fatalf("error connecting to the client: %v", err)
+		}
 	}
+
+	client, err = kubernetes.NewForConfig(config)
 	if err != nil {
 		log.Fatalln("failed to create client:", err)
 	}
@@ -98,7 +105,7 @@ func main() {
 	log.Infoln("Starting event_exporter", version.Info())
 	log.Infoln("Build context", version.BuildContext())
 
-	http.Handle(*metricPath, prometheus.Handler())
+	http.Handle(*metricPath, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write(landingPage)
 	})
