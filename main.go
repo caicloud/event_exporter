@@ -7,9 +7,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/caicloud/nirvana/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/log"
 	"github.com/prometheus/common/version"
 	"github.com/spf13/pflag"
 	"k8s.io/client-go/kubernetes"

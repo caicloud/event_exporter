@@ -1,5 +1,5 @@
 
-FROM golang:1.9-alpine as builder
+FROM golang:1.12-alpine as builder
 WORKDIR ${GOPATH}/src/github.com/caicloud/event_exporter
 RUN apk add --update --no-cache make git build-base gcc abuild binutils binutils-doc gcc-doc
 COPY . ./

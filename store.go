@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/caicloud/nirvana/log"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/log"
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -95,13 +95,13 @@ func eventCleaning(e *core_v1.Event) {
 
 func eventListFunc(c kubernetes.Interface, ns string) func(meta_v1.ListOptions) (runtime.Object, error) {
 	return func(options meta_v1.ListOptions) (runtime.Object, error) {
-		return c.EventsV1beta1().Events(ns).List(options)
+		return c.CoreV1().Events(ns).List(options)
 	}
 }
 
 func eventWatchFunc(c kubernetes.Interface, ns string) func(meta_v1.ListOptions) (watch.Interface, error) {
 	return func(options meta_v1.ListOptions) (watch.Interface, error) {
-		return c.EventsV1beta1().Events(ns).Watch(options)
+		return c.CoreV1().Events(ns).Watch(options)
 	}
 }
 
