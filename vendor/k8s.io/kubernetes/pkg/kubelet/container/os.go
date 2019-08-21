@@ -1,5 +1,5 @@
 /*
-Copyright 2015 The Kubernetes Authors All rights reserved.
+Copyright 2015 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package container
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -29,17 +30,20 @@ type OSInterface interface {
 	Symlink(oldname string, newname string) error
 	Stat(path string) (os.FileInfo, error)
 	Remove(path string) error
+	RemoveAll(path string) error
 	Create(path string) (*os.File, error)
+	Chmod(path string, perm os.FileMode) error
 	Hostname() (name string, err error)
 	Chtimes(path string, atime time.Time, mtime time.Time) error
 	Pipe() (r *os.File, w *os.File, err error)
 	ReadDir(dirname string) ([]os.FileInfo, error)
+	Glob(pattern string) ([]string, error)
 }
 
-// RealOS is used to dispatch the real system level operaitons.
+// RealOS is used to dispatch the real system level operations.
 type RealOS struct{}
 
-// MkDir will will call os.Mkdir to create a directory.
+// MkdirAll will call os.MkdirAll to create a directory.
 func (RealOS) MkdirAll(path string, perm os.FileMode) error {
 	return os.MkdirAll(path, perm)
 }
@@ -59,10 +63,21 @@ func (RealOS) Remove(path string) error {
 	return os.Remove(path)
 }
 
+// RemoveAll will call os.RemoveAll to remove the path and its children.
+func (RealOS) RemoveAll(path string) error {
+	return os.RemoveAll(path)
+}
+
 // Create will call os.Create to create and return a file
 // at path.
 func (RealOS) Create(path string) (*os.File, error) {
 	return os.Create(path)
+}
+
+// Chmod will change the permissions on the specified path or return
+// an error.
+func (RealOS) Chmod(path string, perm os.FileMode) error {
+	return os.Chmod(path, perm)
 }
 
 // Hostname will call os.Hostname to return the hostname.
@@ -83,4 +98,10 @@ func (RealOS) Pipe() (r *os.File, w *os.File, err error) {
 // ReadDir will call ioutil.ReadDir to return the files under the directory.
 func (RealOS) ReadDir(dirname string) ([]os.FileInfo, error) {
 	return ioutil.ReadDir(dirname)
+}
+
+// Glob will call filepath.Glob to return the names of all files matching
+// pattern.
+func (RealOS) Glob(pattern string) ([]string, error) {
+	return filepath.Glob(pattern)
 }

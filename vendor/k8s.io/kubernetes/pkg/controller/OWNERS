@@ -1,4 +1,12 @@
-assignees:
-  - bprashanth
-  - derekwaynecarr
-  - mikedanese
+# See the OWNERS docs at https://go.k8s.io/owners
+
+approvers:
+- deads2k
+- derekwaynecarr
+- mikedanese
+- janetkuo
+reviewers:
+- deads2k
+- cheftako
+labels:
+- sig/apps

@@ -6,15 +6,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/caicloud/nirvana/log"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/log"
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/client/cache"
-	k8s_client "k8s.io/kubernetes/pkg/client/unversioned"
-	"k8s.io/kubernetes/pkg/controller/framework"
-	"k8s.io/kubernetes/pkg/kubelet/container"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/watch"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/kubernetes/pkg/kubelet/events"
 )
 
 const (
@@ -28,18 +28,18 @@ var (
 
 // EventStore stores events, handle event lasts time
 type EventStore struct {
-	client          *k8s_client.Client
+	client          kubernetes.Interface
 	stopCh          chan struct{}
 	stopLock        sync.Mutex
 	shutdown        bool
-	eventController *framework.Controller
+	eventController cache.Controller
 	eventStore      cache.Store
 	backoff         *Backoff
 	events          *prometheus.Desc
 }
 
 // NewEventStore returns EventStore or error
-func NewEventStore(client *k8s_client.Client, init, max time.Duration) (*EventStore, error) {
+func NewEventStore(client kubernetes.Interface, init, max time.Duration) (*EventStore, error) {
 	es := &EventStore{
 		client:  client,
 		stopCh:  make(chan struct{}),
@@ -52,7 +52,7 @@ func NewEventStore(client *k8s_client.Client, init, max time.Duration) (*EventSt
 		),
 	}
 
-	eventHandler := framework.ResourceEventHandlerFuncs{
+	eventHandler := cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			es.sync(obj)
 		},
@@ -61,18 +61,18 @@ func NewEventStore(client *k8s_client.Client, init, max time.Duration) (*EventSt
 		},
 	}
 
-	es.eventStore, es.eventController = framework.NewInformer(
+	es.eventStore, es.eventController = cache.NewInformer(
 		&cache.ListWatch{
-			ListFunc:  eventListFunc(es.client, api.NamespaceAll),
-			WatchFunc: eventWatchFunc(es.client, api.NamespaceAll),
+			ListFunc:  eventListFunc(es.client, core_v1.NamespaceAll),
+			WatchFunc: eventWatchFunc(es.client, core_v1.NamespaceAll),
 		},
-		&api.Event{}, resyncPeriod, eventHandler)
+		&core_v1.Event{}, resyncPeriod, eventHandler)
 
 	return es, nil
 }
 
 func (es *EventStore) sync(obj interface{}) {
-	event := obj.(*api.Event)
+	event := obj.(*core_v1.Event)
 	eventCleaning(event)
 	key, err := keyFunc(event)
 	if err != nil {
@@ -83,8 +83,8 @@ func (es *EventStore) sync(obj interface{}) {
 }
 
 // This function used to handle the not well formated k8s events type
-func eventCleaning(e *api.Event) {
-	if e.Reason == container.FailedSync {
+func eventCleaning(e *core_v1.Event) {
+	if e.Reason == events.FailedSync {
 		if strings.Contains(e.Message, "ErrImagePull") {
 			e.Reason = fmt.Sprintf("%s_%s", e.Reason, "ErrImagePull")
 		} else if strings.Contains(e.Message, "ImagePullBackOff") {
@@ -93,15 +93,15 @@ func eventCleaning(e *api.Event) {
 	}
 }
 
-func eventListFunc(c *k8s_client.Client, ns string) func(api.ListOptions) (runtime.Object, error) {
-	return func(options api.ListOptions) (runtime.Object, error) {
-		return c.Events(ns).List(options)
+func eventListFunc(c kubernetes.Interface, ns string) func(meta_v1.ListOptions) (runtime.Object, error) {
+	return func(options meta_v1.ListOptions) (runtime.Object, error) {
+		return c.CoreV1().Events(ns).List(options)
 	}
 }
 
-func eventWatchFunc(c *k8s_client.Client, ns string) func(api.ListOptions) (watch.Interface, error) {
-	return func(options api.ListOptions) (watch.Interface, error) {
-		return c.Events(ns).Watch(options)
+func eventWatchFunc(c kubernetes.Interface, ns string) func(meta_v1.ListOptions) (watch.Interface, error) {
+	return func(options meta_v1.ListOptions) (watch.Interface, error) {
+		return c.CoreV1().Events(ns).Watch(options)
 	}
 }
 
@@ -150,7 +150,7 @@ func (es *EventStore) Scrap(ch chan<- prometheus.Metric) error {
 			err = fmt.Errorf("event not found: %s", key)
 			continue
 		}
-		event := obj.(*api.Event)
+		event := obj.(*core_v1.Event)
 		ch <- prometheus.MustNewConstMetric(
 			es.events, prometheus.GaugeValue,
 			eval(isHappening),

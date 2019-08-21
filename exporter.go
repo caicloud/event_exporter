@@ -3,8 +3,8 @@ package main
 import (
 	"time"
 
+	"github.com/caicloud/nirvana/log"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/log"
 )
 
 const (

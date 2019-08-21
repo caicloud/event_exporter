@@ -1,5 +1,5 @@
 /*
-Copyright 2014 The Kubernetes Authors All rights reserved.
+Copyright 2014 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@ limitations under the License.
 
 package volume
 
-import "errors"
-
 var _ MetricsProvider = &MetricsNil{}
 
 // MetricsNil represents a MetricsProvider that does not support returning
@@ -28,5 +26,5 @@ type MetricsNil struct{}
 // GetMetrics returns an empty Metrics and an error.
 // See MetricsProvider.GetMetrics
 func (*MetricsNil) GetMetrics() (*Metrics, error) {
-	return &Metrics{}, errors.New("metrics are not supported for MetricsNil Volumes")
+	return &Metrics{}, NewNotSupportedError()
 }

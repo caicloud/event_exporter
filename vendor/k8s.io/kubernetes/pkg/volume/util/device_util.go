@@ -1,5 +1,5 @@
 /*
-Copyright 2016 The Kubernetes Authors All rights reserved.
+Copyright 2016 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,13 +19,16 @@ package util
 //DeviceUtil is a util for common device methods
 type DeviceUtil interface {
 	FindMultipathDeviceForDevice(disk string) string
+	FindSlaveDevicesOnMultipath(disk string) []string
+	GetISCSIPortalHostMapForTarget(targetIqn string) (map[string]int, error)
+	FindDevicesForISCSILun(targetIqn string, lun int) ([]string, error)
 }
 
 type deviceHandler struct {
-	get_io IoUtil
+	getIo IoUtil
 }
 
 //NewDeviceHandler Create a new IoHandler implementation
 func NewDeviceHandler(io IoUtil) DeviceUtil {
-	return &deviceHandler{get_io: io}
+	return &deviceHandler{getIo: io}
 }
