@@ -8,22 +8,22 @@ A Collector that can list and watch Kubernetes events, and according to events' 
 
 ## Build
 
-```
-make
+```shell
+$ make
 ```
 
 ## Run
 
 running outside Kuberentes (Exporter will search for kubeconfig in ~/.kube)
 
-```
-./event_exporter --running-in-cluster=false
+```shell
+$ ./event_exporter --running-in-cluster=false
 ```
 
 running inside Kubernetes (Exporter will use Kubernetes serviceaccount)
 
-```
-./event_exporter
+```shell
+$ ./event_exporter
 ```
 
 ## Collector Flags
@@ -43,19 +43,18 @@ version | Print version information
 
 ## Use Docker
 
-You can deploy this exporter using the `cargo.caicloud.io/sysinfra/event-exporter` Docker image.
+You can deploy this exporter using the Docker image `caicloud/event-exporter:${VERSION}`,
+the available versions can be got from the [releases](https://github.com/caicloud/event_exporter/releases).
 
 For example:
 
-```
-docker pull cargo.caicloud.io/sysinfra/event-exporter
-
-docker run -d -p 9102:9102 -v ~/.kube/config:/root/.kube/config cargo.caicloud.io/sysinfra/event-exporter --running-in-cluster=false
+```shell
+$ docker run -d -p 9102:9102 -v ~/.kube/config:/root/.kube/config caicloud/event-exporter:${VERSION} --running-in-cluster=false
 ```
 
 then make requests:
 
-```
+```shell
 $ curl localhost:9102/metrics
 ```
 
