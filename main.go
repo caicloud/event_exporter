@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/version"
 	"github.com/spf13/pflag"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -43,6 +44,10 @@ var (
 		"running-in-cluster", true,
 		`Optional, if this controller is running in a kubernetes cluster, use the
 		pod secrets for creating a Kubernetes client.`,
+	)
+	kubeNamespace = flags.String(
+		"namespace", core_v1.NamespaceAll,
+		"Optional, the namespace to watch (default all)",
 	)
 	kubeconfig = flags.String("kubeconfig", "", "absolute path to the kubeconfig file")
 )
@@ -95,7 +100,8 @@ func main() {
 	}
 	store, err := NewEventStore(client,
 		time.Duration(*initPreserve)*time.Second,
-		time.Duration(*maxPreserve)*time.Second)
+		time.Duration(*maxPreserve)*time.Second,
+		*kubeNamespace)
 	if err != nil {
 		log.Fatalln("error create event store:", err)
 	}

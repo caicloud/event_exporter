@@ -17,7 +17,7 @@ $ make
 running outside Kuberentes (Exporter will search for kubeconfig in ~/.kube)
 
 ```shell
-$ ./event_exporter --running-in-cluster=false
+$ ./event_exporter --running-in-cluster=false --kubeconfig=$HOME/.kube/config
 ```
 
 running inside Kubernetes (Exporter will use Kubernetes serviceaccount)
