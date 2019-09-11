@@ -39,7 +39,7 @@ type EventStore struct {
 }
 
 // NewEventStore returns EventStore or error
-func NewEventStore(client kubernetes.Interface, init, max time.Duration) (*EventStore, error) {
+func NewEventStore(client kubernetes.Interface, init, max time.Duration, namespace string) (*EventStore, error) {
 	es := &EventStore{
 		client:  client,
 		stopCh:  make(chan struct{}),
@@ -63,8 +63,8 @@ func NewEventStore(client kubernetes.Interface, init, max time.Duration) (*Event
 
 	es.eventStore, es.eventController = cache.NewInformer(
 		&cache.ListWatch{
-			ListFunc:  eventListFunc(es.client, core_v1.NamespaceAll),
-			WatchFunc: eventWatchFunc(es.client, core_v1.NamespaceAll),
+			ListFunc:  eventListFunc(es.client, namespace),
+			WatchFunc: eventWatchFunc(es.client, namespace),
 		},
 		&core_v1.Event{}, resyncPeriod, eventHandler)
 
