@@ -1,6 +1,6 @@
 # Kubernetes Event Exporter
 
-Kuberentes events to Prometheus bridge.
+Kubernetes events to Prometheus bridge.
 
 A Collector that can list and watch Kubernetes events, and according to events' occurrence, determine how long the event lasts. The information is then translated into metrics.
 
