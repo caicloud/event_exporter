@@ -30,7 +30,8 @@ GO_VERSION = 1.13
 
 CPUS ?= $(shell /bin/bash hack/read_cpus_available.sh)
 GOPATH ?= $(shell go env GOPATH)
-GOLANGCI_LINT := $(GOPATH)/bin/golangci-lint
+BIN_DIR := $(GOPATH)/bin
+GOLANGCI_LINT := $(BIN_DIR)/golangci-lint
 
 .PHONY: lint test build build-local container push clean
 
