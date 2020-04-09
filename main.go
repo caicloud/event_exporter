@@ -77,13 +77,10 @@ func main() {
 	if err != nil {
 		klog.Fatalln("create client:", err)
 	}
-	store, err := NewEventStore(client,
+	store := NewEventStore(client,
 		time.Duration(*initPreserve)*time.Second,
 		time.Duration(*maxPreserve)*time.Second,
 		*kubeNamespace)
-	if err != nil {
-		klog.Fatalln("create event store:", err)
-	}
 	go store.Run()
 	exporter := NewExporter(store)
 	prometheus.MustRegister(exporter)

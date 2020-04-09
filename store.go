@@ -38,7 +38,7 @@ type EventStore struct {
 }
 
 // NewEventStore returns EventStore or error
-func NewEventStore(client kubernetes.Interface, init, max time.Duration, namespace string) (*EventStore, error) {
+func NewEventStore(client kubernetes.Interface, init, max time.Duration, namespace string) *EventStore {
 	es := &EventStore{
 		client:  client,
 		stopCh:  make(chan struct{}),
@@ -67,7 +67,7 @@ func NewEventStore(client kubernetes.Interface, init, max time.Duration, namespa
 		},
 		&core_v1.Event{}, resyncPeriod, eventHandler)
 
-	return es, nil
+	return es
 }
 
 func (es *EventStore) sync(obj interface{}) {
@@ -78,7 +78,7 @@ func (es *EventStore) sync(obj interface{}) {
 		klog.Errorf("cannot generate key of event: %v", event)
 		return
 	}
-	es.backoff.Next(key, int(event.Count), event.LastTimestamp.Time)
+	es.backoff.Next(key, event.LastTimestamp.Time)
 }
 
 // This function used to handle the not well formated k8s events type

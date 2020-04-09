@@ -11,7 +11,7 @@ type backoffEntry struct {
 	lastUpdate time.Time
 }
 
-// Backoff stores entries hoding backoff infomation
+// Backoff stores entries holding backoff information
 type Backoff struct {
 	sync.Mutex
 	baseDuration time.Duration
@@ -30,7 +30,7 @@ func NewBackoff(init, max time.Duration) *Backoff {
 }
 
 // Next moves backoff to next mark, capping at maxDuration
-func (p *Backoff) Next(id string, count int, eventTime time.Time) {
+func (p *Backoff) Next(id string, eventTime time.Time) {
 	p.Lock()
 	defer p.Unlock()
 	entry, ok := p.perItemEntry[id]

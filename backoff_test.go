@@ -38,7 +38,7 @@ func TestBackoff_AllKeysStateSinceUpdate(t *testing.T) {
 			fields: fields{
 				baseDuration: 10 * time.Second,
 				maxDuration:  300 * time.Second,
-				perItemEntry: map[string]*backoffEntry{"entry": &backoffEntry{
+				perItemEntry: map[string]*backoffEntry{"entry": {
 					backoff:    10 * time.Second,
 					lastUpdate: time.Now(),
 				}},
@@ -53,7 +53,7 @@ func TestBackoff_AllKeysStateSinceUpdate(t *testing.T) {
 			fields: fields{
 				baseDuration: 10 * time.Second,
 				maxDuration:  300 * time.Second,
-				perItemEntry: map[string]*backoffEntry{"entry": &backoffEntry{
+				perItemEntry: map[string]*backoffEntry{"entry": {
 					backoff:    10 * time.Second,
 					lastUpdate: time.Now().Add(-20 * time.Second),
 				}},
@@ -69,15 +69,15 @@ func TestBackoff_AllKeysStateSinceUpdate(t *testing.T) {
 				baseDuration: 10 * time.Second,
 				maxDuration:  300 * time.Second,
 				perItemEntry: map[string]*backoffEntry{
-					"entry1": &backoffEntry{
+					"entry1": {
 						backoff:    10 * time.Second,
 						lastUpdate: time.Now().Add(-1 * time.Second),
 					},
-					"entry2": &backoffEntry{
+					"entry2": {
 						backoff:    10 * time.Second,
 						lastUpdate: time.Now().Add(-5 * time.Second),
 					},
-					"entry3": &backoffEntry{
+					"entry3": {
 						backoff:    10 * time.Second,
 						lastUpdate: time.Now().Add(-20 * time.Second),
 					},
@@ -139,7 +139,7 @@ func TestBackoff_Next(t *testing.T) {
 			fields: fields{
 				baseDuration: 10 * time.Second,
 				maxDuration:  300 * time.Second,
-				perItemEntry: map[string]*backoffEntry{"entry": &backoffEntry{
+				perItemEntry: map[string]*backoffEntry{"entry": {
 					backoff:    10 * time.Second,
 					lastUpdate: time.Now(),
 				}},
@@ -157,7 +157,7 @@ func TestBackoff_Next(t *testing.T) {
 			fields: fields{
 				baseDuration: 10 * time.Second,
 				maxDuration:  300 * time.Second,
-				perItemEntry: map[string]*backoffEntry{"entry": &backoffEntry{
+				perItemEntry: map[string]*backoffEntry{"entry": {
 					backoff:    200 * time.Second,
 					lastUpdate: time.Now(),
 				}},
@@ -177,7 +177,7 @@ func TestBackoff_Next(t *testing.T) {
 			maxDuration:  tt.fields.maxDuration,
 			perItemEntry: tt.fields.perItemEntry,
 		}
-		p.Next(tt.args.id, tt.args.count, tt.args.eventTime)
+		p.Next(tt.args.id, tt.args.eventTime)
 		got, got1 := p.Get(tt.args.id)
 		if got != tt.want {
 			t.Errorf("%q. Backoff.Get() got = %v, want %v", tt.name, got, tt.want)
