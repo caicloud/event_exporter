@@ -1,8 +1,6 @@
 run:
   # concurrency: 2
   deadline: 5m
-  skip-dirs:
-  - pkg/api/migration
 
 linter-settings:
   goconst:
