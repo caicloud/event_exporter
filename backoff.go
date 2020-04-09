@@ -1,10 +1,9 @@
 package main
 
 import (
+	"math"
 	"sync"
 	"time"
-
-	"k8s.io/utils/integer"
 )
 
 type backoffEntry struct {
@@ -43,7 +42,7 @@ func (p *Backoff) Next(id string, count int, eventTime time.Time) {
 	} else {
 		delay := entry.backoff * 2
 		entry.lastUpdate = eventTime
-		entry.backoff = time.Duration(integer.Int64Min(int64(delay), int64(p.maxDuration)))
+		entry.backoff = time.Duration(math.Min(float64(delay), float64(p.maxDuration)))
 	}
 }
 
