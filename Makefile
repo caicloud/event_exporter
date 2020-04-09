@@ -1,66 +1,75 @@
-# Copyright 2015 The Prometheus Authors
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# Copyright 2019 The Caicloud Authors.
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+# The old school Makefile, following are required targets. The Makefile is written
+# to allow building multiple binaries. You are free to add more targets or change
+# existing implementations, as long as the semantics are preserved.
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#   make              - default to 'build' target
+#   make lint         - code analysis with golangci-lint
+#   make test         - run unit test
+#   make build        - build binary in a Golang container
+#   make build-local  - build local binary
+#   make container    - build container
+#   make push         - push container
+#   make clean        - clean up
+#
+# The makefile is also responsible to populate project version information.
+#
 
-GO    := GO15VENDOREXPERIMENT=1 go
-PROMU := $(GOPATH)/bin/promu
-pkgs   = $(shell $(GO) list ./... | grep -v /vendor/)
+ROOT := github.com/caicloud/event_exporter
+VERSION ?= $(shell git describe --tags --always --dirty)
+COMMIT = $(shell git rev-parse HEAD)
+BRANCH = $(shell git branch | grep \* | cut -d ' ' -f2)
+BUILD_DATE = $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 
-PREFIX                  ?= $(shell pwd)
-BIN_DIR                 ?= $(shell pwd)
-DOCKER_IMAGE_NAME       ?= event-exporter
-DOCKER_IMAGE_TAG        ?= $(subst /,-,$(shell git rev-parse --abbrev-ref HEAD))
+# this is not a public registry; change it to your own
+REGISTRY ?= cargo.dev.caicloud.xyz/release
 
-ifdef DEBUG
-	bindata_flags = -debug
-endif
+ARCH ?= amd64
+GO_VERSION = 1.13
 
+CPUS ?= $(shell /bin/bash hack/read_cpus_available.sh)
+GOPATH ?= $(shell go env GOPATH)
+GOLANGCI_LINT := $(GOPATH)/bin/golangci-lint
 
-all: format build test
+.PHONY: lint test build build-local container push clean
+
+build:
+	@docker run --rm -t													\
+	  -v "${PWD}:/go/src/github.com/caicloud/event_exporter"			\
+	  -w /go/src/github.com/caicloud/event_exporter						\
+	  golang:${GO_VERSION} make build-local
+
+build-local: clean
+	@echo ">> building binaries"
+	@GOOS=$(shell uname -s | tr A-Z a-z) GOARCH=$(ARCH) CGO_ENABLED=0	\
+	go build -mod=vendor -ldflags "-s -w								\
+	  -X $(ROOT)/pkg/version.Version=${VERSION}							\
+	  -X $(ROOT)/pkg/version.Branch=${BRANCH}							\
+	  -X $(ROOT)/pkg/version.Commit=${COMMIT}							\
+	  -X $(ROOT)/pkg/version.BuildDate=${BUILD_DATE}"					\
+	-o event_exporter
+
+container: build
+	@echo ">> building image"
+	@docker build -t $(REGISTRY)/event_exporter:$(VERSION) -f ./Dockerfile .
+
+push: container
+	@echo ">> pushing image"
+	@docker push $(REGISTRY)/event_exporter:$(VERSION)
+
+lint: $(GOLANGCI_LINT)
+	@echo ">> running golangci-lint"
+	@$(GOLANGCI_LINT) run
+
+$(GOLANGCI_LINT):
+	@curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(BIN_DIR) v1.23.6
 
 test:
 	@echo ">> running tests"
-	@$(GO) test -short $(pkgs)
+	@go test -p $(CPUS) $$(go list ./... | grep -v /vendor) -coverprofile=coverage.out
+	@go tool cover -func coverage.out | tail -n 1 | awk '{ print "Total coverage: " $$3 }'
 
-style:
-	@echo ">> checking code style"
-	@! gofmt -d $(shell find . -path ./vendor -prune -o -name '*.go' -print) | grep '^'
-
-format:
-	@echo ">> formatting code"
-	@$(GO) fmt $(pkgs)
-
-vet:
-	@echo ">> vetting code"
-	@$(GO) vet $(pkgs)
-
-build: promu
-	@echo ">> building binaries"
-	@$(PROMU) build --prefix $(PREFIX)
-
-tarball: promu
-	@echo ">> building release tarball"
-	@$(PROMU) tarball --prefix $(PREFIX) $(BIN_DIR)
-
-docker:
-	@echo ">> building docker image"
-	@docker build -t "$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" .
-
-push:
-	@docker push "$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
-
-promu:
-	@GOOS=$(shell uname -s | tr A-Z a-z) \
-	GOARCH=$(subst x86_64,amd64,$(patsubst i%86,386,$(shell uname -m))) \
-	$(GO) get -u github.com/prometheus/promu
-
-.PHONY: all style format build test vet tarball docker promu
+clean:
+	@echo ">> cleaning up"
+	@rm -f event_exporter coverage.out
