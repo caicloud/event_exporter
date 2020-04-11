@@ -1,55 +1,54 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/caicloud/nirvana/log"
+	"github.com/caicloud/event_exporter/pkg/version"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/version"
 	"github.com/spf13/pflag"
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog"
 )
 
 var (
-	flags       = pflag.NewFlagSet("", pflag.ExitOnError)
-	showVersion = flags.Bool(
+	showVersion = pflag.Bool(
 		"version", false,
 		"Print version information",
 	)
-	listenAddress = flags.String(
+	listenAddress = pflag.String(
 		"web.listen-address", ":9102",
 		"Address to listen on for web interface and telemetry.",
 	)
-	metricPath = flags.String(
+	metricPath = pflag.String(
 		"web.telemetry-path", "/metrics",
 		"Path under which to expose metrics.",
 	)
-	maxPreserve = flags.Int(
+	maxPreserve = pflag.Int(
 		"event.max-length", 300,
 		"Upper bound duration(sec) of an event to preserve",
 	)
-	initPreserve = flags.Int(
+	initPreserve = pflag.Int(
 		"event.init-length", 20,
 		"Lower bound duration(sec) of an event to preserve",
 	)
-	inCluster = flags.Bool(
-		"running-in-cluster", true,
-		`Optional, if this controller is running in a kubernetes cluster, use the
-		pod secrets for creating a Kubernetes client.`,
-	)
-	kubeNamespace = flags.String(
+	kubeNamespace = pflag.String(
 		"namespace", core_v1.NamespaceAll,
 		"Optional, the namespace to watch (default all)",
 	)
-	kubeconfig = flags.String("kubeconfig", "", "absolute path to the kubeconfig file")
+	kubeConfig = pflag.String(
+		"kubeconfig", "",
+		"Absolute path to the kubeconfig file",
+	)
+	apiserver = pflag.String(
+		"apiserver", "",
+		"The URL of the apiserver to use as a master",
+	)
 )
 
 var landingPage = []byte(`<html>
@@ -61,61 +60,36 @@ var landingPage = []byte(`<html>
 </html>
 `)
 
-func serveHTTP() {
-}
-
-// func init() {
-// 	prometheus.MustRegister(version.NewCollector("event_exporter"))
-// }
-
-func main() {
-	flags.AddGoFlagSet(flag.CommandLine)
-	flags.Parse(os.Args)
-
-	// Workaround of noisy log, see https://github.com/kubernetes/kubernetes/issues/17162
-	flag.CommandLine.Parse([]string{})
-
+func init() {
+	pflag.Parse()
 	if *showVersion {
-		fmt.Fprintln(os.Stdout, version.Print("event_exporter"))
+		fmt.Fprintln(os.Stdout, version.Message())
 		os.Exit(0)
 	}
-	var client kubernetes.Interface
-	var config *rest.Config
-	var err error
-	if *inCluster {
-		config, err = rest.InClusterConfig()
-		if err != nil {
-			log.Fatalf("error get incluster config: %v", err)
-		}
-	} else {
-		config, err = clientcmd.BuildConfigFromFlags("", *kubeconfig)
-		if err != nil {
-			log.Fatalf("error connecting to the client: %v", err)
-		}
-	}
+}
 
-	client, err = kubernetes.NewForConfig(config)
+func main() {
+	config, err := clientcmd.BuildConfigFromFlags(*apiserver, *kubeConfig)
 	if err != nil {
-		log.Fatalln("failed to create client:", err)
+		klog.Fatalf("build kubeconfig: %v", err)
 	}
-	store, err := NewEventStore(client,
+	client, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		klog.Fatalln("create client:", err)
+	}
+	store := NewEventStore(client,
 		time.Duration(*initPreserve)*time.Second,
 		time.Duration(*maxPreserve)*time.Second,
 		*kubeNamespace)
-	if err != nil {
-		log.Fatalln("error create event store:", err)
-	}
 	go store.Run()
 	exporter := NewExporter(store)
 	prometheus.MustRegister(exporter)
-	log.Infoln("Starting event_exporter", version.Info())
-	log.Infoln("Build context", version.BuildContext())
 
 	http.Handle(*metricPath, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write(landingPage)
+		_, _ = w.Write(landingPage)
 	})
 
-	log.Infoln("Listening on", *listenAddress)
-	log.Fatal(http.ListenAndServe(*listenAddress, nil))
+	klog.Infoln("Listening on", *listenAddress)
+	klog.Fatal(http.ListenAndServe(*listenAddress, nil))
 }

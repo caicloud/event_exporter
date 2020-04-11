@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/caicloud/nirvana/log"
 	"github.com/prometheus/client_golang/prometheus"
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/kubernetes/pkg/kubelet/events"
+	"k8s.io/klog"
 )
 
 const (
@@ -39,7 +38,7 @@ type EventStore struct {
 }
 
 // NewEventStore returns EventStore or error
-func NewEventStore(client kubernetes.Interface, init, max time.Duration, namespace string) (*EventStore, error) {
+func NewEventStore(client kubernetes.Interface, init, max time.Duration, namespace string) *EventStore {
 	es := &EventStore{
 		client:  client,
 		stopCh:  make(chan struct{}),
@@ -68,7 +67,7 @@ func NewEventStore(client kubernetes.Interface, init, max time.Duration, namespa
 		},
 		&core_v1.Event{}, resyncPeriod, eventHandler)
 
-	return es, nil
+	return es
 }
 
 func (es *EventStore) sync(obj interface{}) {
@@ -76,15 +75,15 @@ func (es *EventStore) sync(obj interface{}) {
 	eventCleaning(event)
 	key, err := keyFunc(event)
 	if err != nil {
-		log.Errorf("cannot generate key of event: %v", event)
+		klog.Errorf("cannot generate key of event: %v", event)
 		return
 	}
-	es.backoff.Next(key, int(event.Count), event.LastTimestamp.Time)
+	es.backoff.Next(key, event.LastTimestamp.Time)
 }
 
 // This function used to handle the not well formated k8s events type
 func eventCleaning(e *core_v1.Event) {
-	if e.Reason == events.FailedSync {
+	if e.Reason == "FailedSync" {
 		if strings.Contains(e.Message, "ErrImagePull") {
 			e.Reason = fmt.Sprintf("%s_%s", e.Reason, "ErrImagePull")
 		} else if strings.Contains(e.Message, "ImagePullBackOff") {
@@ -107,7 +106,7 @@ func eventWatchFunc(c kubernetes.Interface, ns string) func(meta_v1.ListOptions)
 
 // Run event store
 func (es *EventStore) Run() {
-	log.Infoln("start event store...")
+	klog.Infoln("start event store...")
 	go es.eventController.Run(es.stopCh)
 	<-es.stopCh
 }
@@ -127,10 +126,6 @@ func (es *EventStore) Stop() error {
 	return fmt.Errorf("shutdown already in progress")
 }
 
-func (es *EventStore) controllersInSync() bool {
-	return es.eventController.HasSynced()
-}
-
 func eval(b bool) float64 {
 	if b {
 		return 1
@@ -139,15 +134,13 @@ func eval(b bool) float64 {
 }
 
 // Scrap events and generate metrics
-func (es *EventStore) Scrap(ch chan<- prometheus.Metric) error {
-	var err error
-	err = nil
+func (es *EventStore) Scrap(ch chan<- prometheus.Metric) {
 	for key, isHappening := range es.backoff.AllKeysStateSinceUpdate(time.Now()) {
 		obj, exists, err := es.eventStore.GetByKey(key)
 		if err != nil {
 			continue
 		} else if !exists {
-			err = fmt.Errorf("event not found: %s", key)
+			klog.Errorf("event not found: %s", key)
 			continue
 		}
 		event := obj.(*core_v1.Event)
@@ -165,5 +158,4 @@ func (es *EventStore) Scrap(ch chan<- prometheus.Metric) error {
 		)
 	}
 	es.backoff.GC()
-	return err
 }

@@ -1,10 +1,9 @@
 package main
 
 import (
+	"math"
 	"sync"
 	"time"
-
-	"k8s.io/utils/integer"
 )
 
 type backoffEntry struct {
@@ -12,7 +11,7 @@ type backoffEntry struct {
 	lastUpdate time.Time
 }
 
-// Backoff stores entries hoding backoff infomation
+// Backoff stores entries holding backoff information
 type Backoff struct {
 	sync.Mutex
 	baseDuration time.Duration
@@ -31,7 +30,7 @@ func NewBackoff(init, max time.Duration) *Backoff {
 }
 
 // Next moves backoff to next mark, capping at maxDuration
-func (p *Backoff) Next(id string, count int, eventTime time.Time) {
+func (p *Backoff) Next(id string, eventTime time.Time) {
 	p.Lock()
 	defer p.Unlock()
 	entry, ok := p.perItemEntry[id]
@@ -43,7 +42,7 @@ func (p *Backoff) Next(id string, count int, eventTime time.Time) {
 	} else {
 		delay := entry.backoff * 2
 		entry.lastUpdate = eventTime
-		entry.backoff = time.Duration(integer.Int64Min(int64(delay), int64(p.maxDuration)))
+		entry.backoff = time.Duration(math.Min(float64(delay), float64(p.maxDuration)))
 	}
 }
 
