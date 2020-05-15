@@ -46,7 +46,7 @@ func NewEventStore(client kubernetes.Interface, init, max time.Duration, namespa
 		events: prometheus.NewDesc(
 			"kubernetes_events",
 			"State of kubernetes events",
-			[]string{"event_namespace", "event_name", "event_kind", "event_reason", "event_type", "event_subobject", "event_message", "event_source"},
+			[]string{"event_metaname", "event_namespace", "event_name", "event_kind", "event_reason", "event_type", "event_subobject", "event_message", "event_source"},
 			nil,
 		),
 	}
@@ -147,6 +147,7 @@ func (es *EventStore) Scrap(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(
 			es.events, prometheus.GaugeValue,
 			eval(isHappening),
+			event.ObjectMeta.Name,
 			event.InvolvedObject.Namespace,
 			event.InvolvedObject.Name,
 			event.InvolvedObject.Kind,
