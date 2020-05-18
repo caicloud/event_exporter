@@ -103,7 +103,7 @@
                      "./event_exporter"
                   ],
                   "env": [ ],
-                  "image": "caicloud/event-exporter:v0.2.0",
+                  "image": "caicloud/event-exporter:v0.3.0",
                   "imagePullPolicy": "Always",
                   "name": "event-exporter",
                   "ports": [
