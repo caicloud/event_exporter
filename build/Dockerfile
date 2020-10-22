@@ -1,6 +1,6 @@
-FROM gcr.io/distroless/static
+FROM gcr.io/distroless/base
 
-COPY event_exporter /
+COPY bin/event_exporter /
 
 USER nobody
 
