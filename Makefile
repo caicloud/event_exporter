@@ -35,7 +35,7 @@ REGISTRY ?= cargo.dev.caicloud.xyz/release
 BASE_REGISTRY ?= cargo.caicloud.xyz/library
 
 ARCH ?= amd64
-GO_VERSION = 1.13
+GO_VERSION = 1.13-security
 
 CPUS ?= $(shell /bin/bash hack/read_cpus_available.sh)
 
@@ -72,7 +72,7 @@ build-linux:
 	  -e GOPATH=/go    																   \
 	  -e GOFLAGS=$(GOFLAGS)   	                                                       \
 	  -e SHELLOPTS=$(SHELLOPTS)                                                        \
-	  golang:$(GO_VERSION)                                            					\
+	  $(BASE_REGISTRY)/golang:$(GO_VERSION)                                            \
 	    /bin/bash -c '                                    								\
 	      	go build -i -v -o $(OUTPUT_DIR)/event_exporter -p $(CPUS)			\
           		 -ldflags "-s -w 										        \
@@ -84,11 +84,11 @@ build-linux:
 
 container: build-linux
 	@echo ">> building image"
-	@docker build -t $(REGISTRY)/event-exporter:$(VERSION) --label $(DOCKER_LABELS)  -f $(BUILD_DIR)/Dockerfile .
+	@docker build -t $(REGISTRY)/event_exporter:$(VERSION) --label $(DOCKER_LABELS)  -f $(BUILD_DIR)/Dockerfile .
 
 push: container
 	@echo ">> pushing image"
-	@docker push $(REGISTRY)/event-exporter:$(VERSION)
+	@docker push $(REGISTRY)/event_exporter:$(VERSION)
 
 lint: $(GOLANGCI_LINT)
 	@echo ">> running golangci-lint"
