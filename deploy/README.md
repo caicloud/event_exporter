@@ -9,7 +9,7 @@ This will help you to deploy event-exporter to a kubernetes cluster and gather m
 Run following commands to deploy event-exporter to a cluster
 
 1. Download deploy.yaml file locally
-2. Update namespace in ClusterRoleBinding object (line 33)
+2. Update namespace in ClusterRoleBinding object (line 18)
 3. `kubectl --context {add your cluster context} -n {add namespace here} apply -f deploy.yaml`
 
 
@@ -19,8 +19,27 @@ Run following commands to deploy event-exporter to a cluster
 Prometheus is currently running and scraping pods in kubernetes
 [Kube-state-metrics](https://github.com/kubernetes/kube-state-metrics) is deployed to your cluster
 
-1. Open your prometheus instance
-2. Search for metrics 'kubernetes_events'
+1. Configure your scrape_config section in `prometheus.yml` file 
+    ```yaml
+    scrape_configs:
+      # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+      - job_name: 'prometheus'
+    
+        # metrics_path defaults to '/metrics'
+        # scheme defaults to 'http'.
+    
+        static_configs:
+        - targets: ['localhost:9090']
+      - job_name: 'event_exporter'
+    
+        # metrics_path defaults to '/metrics'
+        # scheme defaults to 'http'.
+    
+        static_configs:
+        - targets: ['event-exporter:9102']
+    ```
+2. Starting your prometheus instance
+3. Search for metrics `kube_event_count` 、 `kube_event_uinque_events_total`、`kube_event_exporter_version`
 
 # Setup alerts in alert manager
 
