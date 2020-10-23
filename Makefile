@@ -53,7 +53,7 @@ BUILD_DIR := ./build
 build: build-local
 
 build-local: clean
-	@echo ">> building binaries"
+	@echo ">> building binaries"``
 	@GOOS=$(shell uname -s | tr A-Z a-z) GOARCH=$(ARCH) CGO_ENABLED=0	 \
 	go build -i -v -o $(OUTPUT_DIR)/event_exporter -p $(CPUS)			\
 		 -ldflags "-s -w 										        \
@@ -69,7 +69,8 @@ build-linux:
 	  -w /go/src/$(ROOT)                                                               \
 	  -e GOOS=linux                                                                    \
 	  -e GOARCH=amd64                                                                  \
-	  -e GOPATH=/go    																   \
+	  -e GOPATH=/go                                                                    \
+	  -e CGO_ENABLED=0																              \
 	  -e GOFLAGS=$(GOFLAGS)   	                                                       \
 	  -e SHELLOPTS=$(SHELLOPTS)                                                        \
 	  $(BASE_REGISTRY)/golang:$(GO_VERSION)                                            \
