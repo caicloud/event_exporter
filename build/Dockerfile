@@ -1,4 +1,4 @@
-FROM gcr.io/distroless/static
+FROM debian:stretch-curl
 
 COPY bin/event_exporter /
 
