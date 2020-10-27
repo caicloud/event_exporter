@@ -25,10 +25,10 @@ import (
 
 var (
 	exporterVersion = promauto.NewGauge(prometheus.GaugeOpts{
-		Namespace: "kube_event",
+		Namespace: "event_exporter",
 		Subsystem: "",
-		Name:      "exporter_version",
-		Help:      "Version of the exporter",
+		Name:      "build_info",
+		Help:      "A metric with a constant '1' value labeled by version, branch,build_user,build_date and go_version from which event_exporter was built",
 		ConstLabels: prometheus.Labels{
 			"version":    version.Version,
 			"branch":     version.Branch,

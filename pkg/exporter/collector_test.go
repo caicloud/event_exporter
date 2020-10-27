@@ -10,12 +10,12 @@ import (
 
 func TestVersion(t *testing.T) {
 	var testcase utils.MetricsTestCases = map[string]utils.MetricsTestCase{
-		"Version": {
+		"Build_info": {
 			Target: exporterVersion,
 			Want: fmt.Sprintf(`
-        # HELP kube_event_exporter_version Version of the exporter
-        # TYPE kube_event_exporter_version gauge
-        kube_event_exporter_version{branch="UNKNOWN",build_date="UNKNOWN",build_user="Caicloud Authors",go_version="%s",version="1.0.0"} 1
+        # HELP event_exporter_build_info A metric with a constant '1' value labeled by version, branch,build_user,build_date and go_version from which event_exporter was built
+        # TYPE event_exporter_build_info gauge
+        event_exporter_build_info{branch="UNKNOWN",build_date="UNKNOWN",build_user="Caicloud Authors",go_version="%s",version="1.0.0"} 1
 `, runtime.Version()),
 		},
 	}
