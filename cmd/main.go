@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	resync = time.Minute * 10
+	resync = time.Minute * 5
 )
 
 func main() {
