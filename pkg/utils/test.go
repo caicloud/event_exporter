@@ -26,11 +26,6 @@ type MetricsTestCase struct {
 // Test runs the tests. It returns an error if the Collector does not work properly. It returns
 // a list of link errors and no errors if the Collector works but has non-standard definition.
 func (mtc MetricsTestCase) Test() ([]promlint.Problem, error) {
-	if problems, err := testutil.CollectAndLint(mtc.Target, mtc.Metrics...); err != nil {
-		return nil, errors.Wrap(err, "collection failed")
-	} else if len(problems) > 0 {
-		return problems, nil
-	}
 	want := bytes.NewBufferString(mtc.Want)
 	if err := testutil.CollectAndCompare(mtc.Target, want, mtc.Metrics...); err != nil {
 		return nil, errors.Wrap(err, "output verification failed")
