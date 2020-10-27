@@ -16,9 +16,9 @@ A Collector that can list and watch Kubernetes events, and according to events' 
    ```
    kube_event_unique_events_total{involved_object_kind="Deployment",involved_object_name="event-exporter",involved_object_namespace="default",name="event-exporter.1640452bd04fc7bf",namespace="default",reason="ScalingReplicaSet",source="/deployment-controller",type="Normal"} 1
    ```
-3. `kube_event_exporter_version`Version of the event exporter
+3. `event_exporter_version`Information of the event exporter that was built
    ```
-   kube_event_exporter_version{branch="v1.0",build_date="2020-10-22T10:11:29Z",build_user="Caicloud Authors",go_version="go1.13.15",version="v1.0.0"} 1
+   event_exporter_build_info{branch="v1.0",build_date="2020-10-22T10:11:29Z",build_user="Caicloud Authors",go_version="go1.13.15",version="v1.0.0"} 1
    ```
 
 # Getting Started
@@ -26,7 +26,7 @@ A Collector that can list and watch Kubernetes events, and according to events' 
 ## Build
 
 ```shell
-$ make build
+$ VERSION=v1.0.0 REGISTRY=docker.io make build
 ```
 If you want to get more information about flag options,please refer to `Makefile` in our repository
 ## Run
@@ -69,12 +69,6 @@ Then check the pod status:
 ```shell
 kubectl get pods | grep event
 ```
-If running,make the request get metrics:
-
-```shell
-curl localhost:30036/metrics
-```
-Example response:
 
 ```
 # HELP go_gc_duration_seconds A summary of the pause duration of garbage collection cycles.
@@ -167,9 +161,9 @@ go_memstats_sys_bytes 7.2810744e+07
 # HELP go_threads Number of OS threads created.
 # TYPE go_threads gauge
 go_threads 18
-# HELP kube_event_exporter_version Version of the exporter
-# TYPE kube_event_exporter_version gauge
-kube_event_exporter_version{branch="UNKNOWN",build_date="UNKNOWN",build_user="Caicloud Authors",go_version="%s",version="1.0.0"} 1
+# HELP event_exporter_build_info A metric with a constant '1' value labeled by version, branch,build_user,build_date and go_version from which event_exporter was built
+# TYPE event_exporter_build_info gauge
+event_exporter_info{branch="v1.0",build_date="2020-10-22T10:11:29Z",build_user="Caicloud Authors",go_version="go1.13.15",version="v1.0.0"} 1
 # HELP kube_event_count Number of kubernetes event happened
 # TYPE kube_event_count gauge
 kube_event_count{involved_object_kind="Deployment",involved_object_name="event-exporter",involved_object_namespace="default",name="event-exporter.1640452bd04fc7bf",namespace="default",reason="ScalingReplicaSet",source="/deployment-controller",type="Normal"} 1

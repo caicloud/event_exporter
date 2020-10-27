@@ -35,7 +35,7 @@ REGISTRY ?= cargo.dev.caicloud.xyz/release
 BASE_REGISTRY ?= cargo.caicloud.xyz/library
 
 ARCH ?= amd64
-GO_VERSION = 1.13-security
+GO_VERSION ?= 1.13
 
 CPUS ?= $(shell /bin/bash hack/read_cpus_available.sh)
 

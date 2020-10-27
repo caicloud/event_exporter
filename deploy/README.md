@@ -39,7 +39,7 @@ Prometheus is currently running and scraping pods in kubernetes
         - targets: ['event-exporter:9102']
     ```
 2. Starting your prometheus instance
-3. Search for metrics `kube_event_count` 、 `kube_event_uinque_events_total`、`kube_event_exporter_version`
+3. Search for metrics `kube_event_count` 、 `kube_event_uinque_events_total`、`event_exporter_build_info`
 
 # Setup alerts in alert manager
 
