@@ -1,4 +1,4 @@
-FROM debian:stretch-curl
+FROM debian:stretch-slim
 
 COPY bin/event_exporter /
 
