@@ -22,42 +22,74 @@ COMMIT = $(shell git rev-parse HEAD)
 BRANCH = $(shell git branch | grep \* | cut -d ' ' -f2)
 BUILD_DATE = $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 
+
+# It's necessary to set the errexit flags for the bash shell.
+export SHELLOPTS := errexit
+
+# This will force go to use the vendor files instead of using the `$GOPATH/pkg/mod`. (vendor mode)
+# more info: https://github.com/golang/go/wiki/Modules#how-do-i-use-vendoring-with-modules-is-vendoring-going-away
+export GOFLAGS := -mod=vendor
+
 # this is not a public registry; change it to your own
 REGISTRY ?= cargo.dev.caicloud.xyz/release
+BASE_REGISTRY ?= cargo.caicloud.xyz/library
 
 ARCH ?= amd64
-GO_VERSION = 1.13
+GO_VERSION ?= 1.13
 
 CPUS ?= $(shell /bin/bash hack/read_cpus_available.sh)
+
+# Track code version with Docker Label.
+DOCKER_LABELS ?= git-describe="$(shell date -u +v%Y%m%d)-$(shell git describe --tags --always --dirty)"
+
 GOPATH ?= $(shell go env GOPATH)
 BIN_DIR := $(GOPATH)/bin
 GOLANGCI_LINT := $(BIN_DIR)/golangci-lint
+CMD_DIR := ./cmd
+OUTPUT_DIR := ./bin
+BUILD_DIR := ./build
+.PHONY: lint test build build-local build-linux container push clean
 
-.PHONY: lint test build build-local container push clean
-
-build:
-	@docker run --rm -t													\
-	  -v "${PWD}:/go/src/github.com/caicloud/event_exporter"			\
-	  -w /go/src/github.com/caicloud/event_exporter						\
-	  golang:${GO_VERSION} make build-local
+build: build-local
 
 build-local: clean
-	@echo ">> building binaries"
-	@GOOS=$(shell uname -s | tr A-Z a-z) GOARCH=$(ARCH) CGO_ENABLED=0	\
-	go build -mod=vendor -ldflags "-s -w								\
-	  -X $(ROOT)/pkg/version.Version=${VERSION}							\
-	  -X $(ROOT)/pkg/version.Branch=${BRANCH}							\
-	  -X $(ROOT)/pkg/version.Commit=${COMMIT}							\
-	  -X $(ROOT)/pkg/version.BuildDate=${BUILD_DATE}"					\
-	-o event_exporter
+	@echo ">> building binaries"``
+	@GOOS=$(shell uname -s | tr A-Z a-z) GOARCH=$(ARCH) CGO_ENABLED=0	 \
+	go build -i -v -o $(OUTPUT_DIR)/event_exporter -p $(CPUS)			\
+		 -ldflags "-s -w 										        \
+	  -X $(ROOT)/pkg/version.Version=${VERSION}							 \
+	  -X $(ROOT)/pkg/version.Branch=${BRANCH}							 \
+	  -X $(ROOT)/pkg/version.Commit=${COMMIT}							 \
+	  -X $(ROOT)/pkg/version.BuildDate=${BUILD_DATE}"					 \
+	 $(CMD_DIR)/
 
-container: build
+build-linux:
+	@docker run --rm -t                                                                \
+	  -v $(PWD):/go/src/$(ROOT)                                                        \
+	  -w /go/src/$(ROOT)                                                               \
+	  -e GOOS=linux                                                                    \
+	  -e GOARCH=amd64                                                                  \
+	  -e GOPATH=/go                                                                    \
+	  -e CGO_ENABLED=0																              \
+	  -e GOFLAGS=$(GOFLAGS)   	                                                       \
+	  -e SHELLOPTS=$(SHELLOPTS)                                                        \
+	  $(BASE_REGISTRY)/golang:$(GO_VERSION)                                            \
+	    /bin/bash -c '                                    								\
+	      	go build -i -v -o $(OUTPUT_DIR)/event_exporter -p $(CPUS)			\
+          		 -ldflags "-s -w 										        \
+          	  -X $(ROOT)/pkg/version.Version=${VERSION}							 \
+          	  -X $(ROOT)/pkg/version.Branch=${BRANCH}							 \
+          	  -X $(ROOT)/pkg/version.Commit=${COMMIT}							 \
+          	  -X $(ROOT)/pkg/version.BuildDate=${BUILD_DATE}"					 \
+          	 $(CMD_DIR)/'                                                    			\
+
+container: build-linux
 	@echo ">> building image"
-	@docker build -t $(REGISTRY)/event_exporter:$(VERSION) -f ./Dockerfile .
+	@docker build -t $(REGISTRY)/event-exporter:$(VERSION) --label $(DOCKER_LABELS)  -f $(BUILD_DIR)/Dockerfile .
 
 push: container
 	@echo ">> pushing image"
-	@docker push $(REGISTRY)/event_exporter:$(VERSION)
+	@docker push $(REGISTRY)/event-exporter:$(VERSION)
 
 lint: $(GOLANGCI_LINT)
 	@echo ">> running golangci-lint"
@@ -73,4 +105,5 @@ test:
 
 clean:
 	@echo ">> cleaning up"
-	@rm -f event_exporter coverage.out
+	@-rm -vrf ${OUTPUT_DIR}
+	@rm -f coverage.out
