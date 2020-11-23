@@ -8,11 +8,11 @@ A Collector that can list and watch Kubernetes events, and according to events' 
 
 # Metrics Overview
 
-1. `kube_event_count` Number of kubernetes event that happened in the past an hour.The metric value is the same as the count property of event in the cluster.
+1. `kube_event_count` Count of kubernetes event that was seen for the last hour. The metric value is the same as the count property of `Event` object in the cluster.
    ```
    kube_event_count{involved_object_kind="Deployment",involved_object_name="event-exporter",involved_object_namespace="default",name="event-exporter.1640452bd04fc7bf",namespace="default",reason="ScalingReplicaSet",source="/deployment-controller",type="Normal"} 1
    ```
-2. `kube_event_uinque_events_total` Total number of kubernetes unique event that happened in the past an hour
+2. `kube_event_unique_events_total` Total number of kubernetes unique event that happened for the last hour.
    ```
    kube_event_unique_events_total{involved_object_kind="Deployment",involved_object_name="event-exporter",involved_object_namespace="default",name="event-exporter.1640452bd04fc7bf",namespace="default",reason="ScalingReplicaSet",source="/deployment-controller",type="Normal"} 1
    ```
