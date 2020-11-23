@@ -7,8 +7,9 @@
 #   make              - default to 'build' target
 #   make lint         - code analysis with golangci-lint
 #   make test         - run unit test
-#   make build        - build binary in a Golang container
+#   make build        - alias for `build-local` target
 #   make build-local  - build local binary
+#   make build-linux  - build amd64 Linux binary
 #   make container    - build container
 #   make push         - push container
 #   make clean        - clean up
@@ -31,10 +32,10 @@ export SHELLOPTS := errexit
 export GOFLAGS := -mod=vendor
 
 # this is not a public registry; change it to your own
-REGISTRY ?= cargo.dev.caicloud.xyz/release
-BASE_REGISTRY ?= cargo.caicloud.xyz/library
+REGISTRY ?= caicloud/
+BASE_REGISTRY ?=
 
-ARCH ?= amd64
+ARCH ?=
 GO_VERSION ?= 1.13
 
 CPUS ?= $(shell /bin/bash hack/read_cpus_available.sh)
@@ -73,7 +74,7 @@ build-linux:
 	  -e CGO_ENABLED=0																              \
 	  -e GOFLAGS=$(GOFLAGS)   	                                                       \
 	  -e SHELLOPTS=$(SHELLOPTS)                                                        \
-	  $(BASE_REGISTRY)/golang:$(GO_VERSION)                                            \
+	  $(BASE_REGISTRY)golang:$(GO_VERSION)                                            \
 	    /bin/bash -c '                                    								\
 	      	go build -i -v -o $(OUTPUT_DIR)/event_exporter -p $(CPUS)			\
           		 -ldflags "-s -w 										        \
@@ -85,11 +86,11 @@ build-linux:
 
 container: build-linux
 	@echo ">> building image"
-	@docker build -t $(REGISTRY)/event-exporter:$(VERSION) --label $(DOCKER_LABELS)  -f $(BUILD_DIR)/Dockerfile .
+	@docker build -t $(REGISTRY)event-exporter:$(VERSION) --label $(DOCKER_LABELS)  -f $(BUILD_DIR)/Dockerfile .
 
 push: container
 	@echo ">> pushing image"
-	@docker push $(REGISTRY)/event-exporter:$(VERSION)
+	@docker push $(REGISTRY)event-exporter:$(VERSION)
 
 lint: $(GOLANGCI_LINT)
 	@echo ">> running golangci-lint"
