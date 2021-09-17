@@ -1,6 +1,6 @@
 module github.com/caicloud/event_exporter
 
-go 1.13
+go 1.17
 
 require (
 	github.com/imdario/mergo v0.3.11 // indirect

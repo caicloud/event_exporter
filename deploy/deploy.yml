@@ -45,6 +45,9 @@ spec:
       labels:
         app: event-exporter
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
       containers:
         - name: event-exporter
           image: 'caicloud/event-exporter:v1.0.0'
