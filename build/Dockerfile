@@ -2,7 +2,7 @@ FROM debian:stretch-slim
 
 COPY bin/event_exporter /
 
-USER nobody
+USER 65534
 
 ENTRYPOINT ["/event_exporter"]
 
