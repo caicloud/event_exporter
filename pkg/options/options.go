@@ -29,6 +29,7 @@ type Options struct {
 	KubeMasterURL  string
 	KubeConfigPath string
 	EventType      []string
+	EventReason    []string
 	Port           int
 	Version        bool
 	flag           *pflag.FlagSet
@@ -48,6 +49,7 @@ func (o *Options) AddFlags() {
 	o.flag.StringVar(&o.KubeMasterURL, "kubeMasterURL", "", "The URL of kubernetes apiserver to use as a master")
 	o.flag.StringVar(&o.KubeConfigPath, "kubeConfigPath", "", "The path of kubernetes configuration file")
 	o.flag.StringArrayVar(&o.EventType, "eventType", []string{"Warning"}, "List of allowed event types. Default to warning type.")
+	o.flag.StringArrayVar(&o.EventReason, "eventReason", []string{}, "List of allowed event reasons. Default to all reasons.")
 	o.flag.IntVar(&o.Port, "port", 9102, "Port to expose event metrics on")
 	o.flag.BoolVar(&o.Version, "version", false, "event exporter version information")
 

@@ -166,7 +166,7 @@ func (ec *EventCollector) syncEvent(key string) error {
 }
 
 func (ec *EventCollector) addFilter(o *options.Options) {
-	typeFilter := filters.NewEventTypeFilter(o.EventType)
+	typeFilter := filters.NewEventTypeFilter(o.EventType, o.EventReason)
 	ec.filters = append(ec.filters, typeFilter)
 }
 
