@@ -27,12 +27,14 @@ type EventFilter interface {
 }
 
 type EventTypeFilter struct {
-	AllowedTypes []string
+	AllowedTypes   []string
+	AllowedReasons []string
 }
 
-func NewEventTypeFilter(allowedTypes []string) *EventTypeFilter {
+func NewEventTypeFilter(allowedTypes []string, allowedReasons []string) *EventTypeFilter {
 	return &EventTypeFilter{
-		AllowedTypes: allowedTypes,
+		AllowedTypes:   allowedTypes,
+		AllowedReasons: allowedReasons,
 	}
 }
 
@@ -42,5 +44,12 @@ func (e *EventTypeFilter) Filter(event *v1.Event) bool {
 			return true
 		}
 	}
+
+	for _, allowedReason := range e.AllowedReasons {
+		if strings.EqualFold(event.Reason, allowedReason) {
+			return true
+		}
+	}
+
 	return false
 }
