@@ -31,13 +31,13 @@ var (
 		Subsystem: "",
 		Name:      "count",
 		Help:      "Number of kubernetes event happened",
-	}, []string{"name", "involved_object_namespace", "namespace", "involved_object_name", "involved_object_kind", "reason", "type", "source"})
+	}, []string{"name", "involved_object_namespace", "namespace", "involved_object_name", "involved_object_kind", "reason", "type", "message", "source"})
 	eventTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "kube_event",
 		Subsystem: "",
 		Name:      "unique_events_total",
 		Help:      "Total number of kubernetes unique event happened",
-	}, []string{"name", "involved_object_namespace", "namespace", "involved_object_name", "involved_object_kind", "reason", "type", "source"})
+	}, []string{"name", "involved_object_namespace", "namespace", "involved_object_name", "involved_object_kind", "reason", "type", "message", "source"})
 )
 
 func increaseUniqueEventTotal(event *v1.Event) {
@@ -49,6 +49,7 @@ func increaseUniqueEventTotal(event *v1.Event) {
 		"involved_object_kind":      event.InvolvedObject.Kind,
 		"reason":                    event.Reason,
 		"type":                      event.Type,
+		"message":                   event.Message,
 		"source":                    fmt.Sprintf("%s/%s", event.Source.Host, event.Source.Component),
 	}).Inc()
 }
@@ -62,6 +63,7 @@ func updateEventCount(event *v1.Event) {
 		"involved_object_kind":      event.InvolvedObject.Kind,
 		"reason":                    event.Reason,
 		"type":                      event.Type,
+		"message":                   event.Message,
 		"source":                    fmt.Sprintf("%s/%s", event.Source.Host, event.Source.Component),
 	}).Set(float64(event.Count))
 }
@@ -75,6 +77,7 @@ func delEventCountMetric(event *v1.Event) {
 		"involved_object_kind":      event.InvolvedObject.Kind,
 		"reason":                    event.Reason,
 		"type":                      event.Type,
+		"message":                   event.Message,
 		"source":                    fmt.Sprintf("%s/%s", event.Source.Host, event.Source.Component),
 	})
 	if ret {
@@ -91,6 +94,7 @@ func delEventTotalMetric(event *v1.Event) {
 		"involved_object_kind":      event.InvolvedObject.Kind,
 		"reason":                    event.Reason,
 		"type":                      event.Type,
+		"message":                   event.Message,
 		"source":                    fmt.Sprintf("%s/%s", event.Source.Host, event.Source.Component),
 	})
 	if ret {

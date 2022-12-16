@@ -151,7 +151,7 @@ func (ec *EventCollector) syncEvent(key string) error {
 		ec.cache[event.ObjectMeta.Name] = *event
 		ec.locker.Unlock()
 		klog.Infof(
-			"event name: %s,count: %d,involvedObject_namespace: %s,involvedObject_kind: %s,involvedObject_name: %s,reason: %s,type: %s",
+			"event name: %s,count: %d,involvedObject_namespace: %s,involvedObject_kind: %s,involvedObject_name: %s,reason: %s,type: %s, message: %s",
 			event.Name,
 			event.Count,
 			event.InvolvedObject.Namespace,
@@ -159,6 +159,7 @@ func (ec *EventCollector) syncEvent(key string) error {
 			event.InvolvedObject.Name,
 			event.Reason,
 			event.Type,
+			event.Message,
 		)
 		EventHandler(event)
 	}
